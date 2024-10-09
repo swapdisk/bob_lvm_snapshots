@@ -53,7 +53,7 @@
   - bigboot_increase_bytes | int > 0
 
 - name: Bob try module
-  bobtry:
+  infra.lvm_snapshots.bobtry:
     pv: /dev/vda2
   register: bobtry
 
