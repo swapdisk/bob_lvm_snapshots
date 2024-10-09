@@ -1,0 +1,5 @@
+#!/bin/bash
+source $1
+echo '{"msg": "Hello!", "pv": "'$pv'", "changed": false, "failed": false, "projects": [1,2]}'
+exit 1
+

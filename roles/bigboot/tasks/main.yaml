@@ -52,6 +52,15 @@
   when:
   - bigboot_increase_bytes | int > 0
 
+- name: Bob try module
+  bobtry:
+    pv: /dev/vda2
+  register: bobtry
+
+- name: Show me
+  ansible.builtin.debug:
+    var: bobtry
+
 - name: Validate increase requested
   ansible.builtin.debug:
     msg: "Nothing to do! Boot partition already equal to or greater than requested size."
