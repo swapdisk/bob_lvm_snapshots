@@ -52,7 +52,7 @@ while true; do
 
   # Find the last linear segment
   LVM2_PVSEG_START=
-  eval $(pvs "$pvdev" $pvsargs | grep SEGTYPE=.linear. | tail -1)
+  eval $(pvs "$pv" $pvsargs | grep SEGTYPE=.linear. | tail -1)
     if [[ -z $LVM2_PVSEG_START ]]; then
     printf '{"failed": true, "msg": "no linear segments found"}'
     exit 1
@@ -66,8 +66,8 @@ while true; do
   # Move last linear PEs to the free segment
   ((moves++))
   changed=true
-  from_range="$pvdev:$((move_start+move_size-free_size))-$((move_start+move_size-1))"
-  to_range="$pvdev:$((free_start))-$((free_start+free_size))"
+  from_range="$pv:$((move_start+move_size-free_size))-$((move_start+move_size-1))"
+  to_range="$pv:$((free_start))-$((free_start+free_size))"
   moveout="$(pvmove --atomic --alloc anywhere "$from_range" "$to_range" 2>&1)"
   if [[ $? -ne 0 ]]; then
     printf '{"failed": true, "msg": %s}' "$(jwash pvmove $from_range $to_range error: $moveout)"
