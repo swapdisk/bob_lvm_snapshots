@@ -53,8 +53,8 @@
   - bigboot_increase_bytes | int > 0
 
 - name: Bob try module
-  infra.lvm_snapshots.bobtry:
-    pv: /dev/vda2
+  infra.lvm_snapshots.pvsqueeze:
+    pv: /dev/nvme0n1p2
   register: bobtry
 
 - name: Show me

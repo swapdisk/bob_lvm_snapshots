@@ -1,0 +1,84 @@
+#!/bin/bash
+#
+# pvsqueeze - Squeeze extents into free holes
+#
+# This script iteratively moves linear (allocated to LV) extents to fill in
+# free holes found in a PV segement map. The end result is that all free
+# extents are at the end of the PV.
+#
+# The script is a lovely example of a bash Ansible module, that is, it reads in
+# args from a file passed from Ansible, does its work, and lastly passes the
+# result back to Ansible as JSON output.
+#
+
+# Sanitize strings for JSON output
+jwash () {
+  echo -n "$*" | /usr/bin/env python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+}
+
+# Ansible input args are set here
+source "$1"
+
+# Check for required arg pv
+if [[ ! $pv ]]; then
+  printf '{"failed": true, "msg": "missing required arguments: pv"}'
+  exit 1
+fi
+
+# Check that pv is really a PV
+pvcheck="$(pvs "$pv" 2>&1)"
+if [[ $? -ne 0 ]]; then
+  printf '{"failed": true, "msg": %s}' "$(jwash pvs error: $pvcheck)"
+  exit 1
+fi
+
+# Get before segment map
+segmap_before="$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1)"
+
+# Iterate stuffing PEs in each free hole
+pvsargs='--noheadings --nameprefixes --segments -o pvseg_start,pvseg_size,segtype'
+moves=0
+changed=false
+while true; do
+  # Find first free segment
+  LVM2_PVSEG_START=
+  eval $(pvs "$pv" $pvsargs | grep SEGTYPE=.free. | head -1)
+  if [[ -z $LVM2_PVSEG_START ]]; then
+    printf '{"failed": true, "msg": "no free segments found"}'
+    exit 1
+  fi
+  free_start=$LVM2_PVSEG_START
+  free_size=$LVM2_PVSEG_SIZE
+
+  # Find the last linear segment
+  LVM2_PVSEG_START=
+  eval $(pvs "$pvdev" $pvsargs | grep SEGTYPE=.linear. | tail -1)
+    if [[ -z $LVM2_PVSEG_START ]]; then
+    printf '{"failed": true, "msg": "no linear segments found"}'
+    exit 1
+  fi
+  move_start=$LVM2_PVSEG_START
+  move_size=$LVM2_PVSEG_SIZE
+
+  # We're done when first free is after the last linear
+  [[ $free_start -gt $move_start ]] && break
+
+  # Move last linear PEs to the free segment
+  ((moves++))
+  changed=true
+  from_range="$pvdev:$((move_start+move_size-free_size))-$((move_start+move_size-1))"
+  to_range="$pvdev:$((free_start))-$((free_start+free_size))"
+  moveout="$(pvmove --atomic --alloc anywhere "$from_range" "$to_range" 2>&1)"
+  if [[ $? -ne 0 ]]; then
+    printf '{"failed": true, "msg": %s}' "$(jwash pvmove $from_range $to_range error: $moveout)"
+    exit 1
+  fi
+done
+
+# Get after segment map
+segmap_done="$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1)"
+
+# Output JSON results
+printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before": %s, segmap_done": %s}' "$(jwash "$segmap_before")" "$(jwash "$segmap_done")"
+
+exit 0
