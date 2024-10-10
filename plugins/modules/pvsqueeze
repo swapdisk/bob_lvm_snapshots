@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env -u LC_CTYPE bash
 #
 # pvsqueeze - Squeeze extents into free holes
 #
@@ -78,7 +78,11 @@ done
 # Get after segment map
 segmap_done="$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1)"
 
+# Debug env vars
+myenv="[$(env | while read e; do echo "$(jwash "$e"),"; done)"
+myenv="${myenv%?}]"
+
 # Output JSON results
-printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before": %s, segmap_done": %s}' "$(jwash "$segmap_before")" "$(jwash "$segmap_done")"
+printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before": %s, segmap_done": %s, "myenv": %s}' "$(jwash "$segmap_before")" "$(jwash "$segmap_done")" "$myenv"
 
 exit 0
