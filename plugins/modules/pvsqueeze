@@ -83,6 +83,6 @@ done
 segmap_done="$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1)"
 
 # Output JSON results
-printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before": %s, segmap_done": %s, "myenv": %s}' "$(jwash "$segmap_before")" "$(jwash "$segmap_done")" "$myenv"
+printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before": %s, "segmap_done": %s, "myenv": %s}' "$(jwash "$segmap_before")" "$(jwash "$segmap_done")" "$myenv"
 
 exit 0
