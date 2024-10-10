@@ -1,4 +1,4 @@
-#!/usr/bin/env -u LC_CTYPE bash
+#!/bin/bash
 #
 # pvsqueeze - Squeeze extents into free holes
 #
@@ -13,8 +13,12 @@
 
 # Sanitize strings for JSON output
 jwash () {
-  echo -n "$*" | /usr/bin/env python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+  echo -n "$*" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
+
+# Debug env vars
+myenv="[$(env | while read e; do echo "$(jwash "$e"),"; done)"
+myenv="${myenv%?}]"
 
 # Ansible input args are set here
 source "$1"
@@ -77,10 +81,6 @@ done
 
 # Get after segment map
 segmap_done="$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1)"
-
-# Debug env vars
-myenv="[$(env | while read e; do echo "$(jwash "$e"),"; done)"
-myenv="${myenv%?}]"
 
 # Output JSON results
 printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before": %s, segmap_done": %s, "myenv": %s}' "$(jwash "$segmap_before")" "$(jwash "$segmap_done")" "$myenv"
