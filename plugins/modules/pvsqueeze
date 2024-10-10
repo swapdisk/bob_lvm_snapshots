@@ -16,10 +16,6 @@ jwash () {
   echo -n "$*" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
 
-# Debug env vars
-myenv="[$(env | while read e; do echo -n "$(jwash "$e"),"; done)"
-myenv="${myenv%?}]"
-
 # Ansible input args are set here
 source "$1"
 
@@ -37,7 +33,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Get before segment map
-segmap_before="$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1)"
+segmap_before_lines="[$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1 | while IFS= read x; do echo -n "$(jwash "$x"),"; done | sed 's/.$/]/')"
 
 # Iterate stuffing PEs in each free hole
 pvsargs='--noheadings --nameprefixes --segments -o pvseg_start,pvseg_size,segtype'
@@ -80,9 +76,9 @@ while true; do
 done
 
 # Get after segment map
-segmap_done="$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1)"
+segmap_done_lines="[$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1 | while IFS= read x; do echo -n "$(jwash "$x"),"; done | sed 's/.$/]/')"
 
 # Output JSON results
-printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before": %s, "segmap_done": %s, "myenv": %s}' "$(jwash "$segmap_before")" "$(jwash "$segmap_done")" "$myenv"
+printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before_lines": %s, "segmap_done_lines": %s}' "$segmap_before_lines" "$segmap_done_lines"
 
 exit 0
