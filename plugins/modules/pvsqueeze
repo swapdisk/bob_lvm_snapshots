@@ -3,12 +3,16 @@
 # pvsqueeze - Squeeze extents into free holes
 #
 # This script iteratively moves linear (allocated to LV) extents to fill in
-# free holes found in a PV segement map. The end result is that all free
+# free holes found in a PV segment map. The final result is that all free
 # extents are at the end of the PV.
 #
 # The script is a lovely example of a bash Ansible module, that is, it reads in
 # args from a file passed from Ansible, does its work, and lastly passes the
 # result back to Ansible as JSON output.
+#
+# Why do this? It's my workaround for github.com/lvmteam/lvm2/issues/148. While
+# the bug has since been fixed upstream, older Linux distros will never have it
+# patched, for example, RHEL 7.
 #
 
 # Sanitize strings for JSON output
@@ -16,17 +20,17 @@ jwash () {
   echo -n "$*" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
 
-# Return segment map as JSON list
-segmap_list () {
-  echo -n "[$(pvs "$1" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1 | while IFS= read -r x; do echo -n "$(jwash "$x"),"; done | sed 's/.$/]/')"
-}
-
 # Return segment info vars
 segvars () {
   pvs "$1" --noheadings --nameprefixes --segments -o pvseg_start,pvseg_size,segtype
 }
 
-# Ansible input args are set here
+# Return segment map as JSON list
+segmap_list () {
+  echo -n "[$(pvs "$1" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1 | while IFS= read -r x; do echo -n "$(jwash "$x"),"; done | sed 's/.$/]/')"
+}
+
+# Ansible args are read in here
 # shellcheck source=/dev/null
 source "$1"
 
