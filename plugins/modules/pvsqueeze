@@ -38,7 +38,7 @@ fi
 
 # Check that pv is really a PV
 if ! pvcheck="$(pvs "$pv" 2>&1)"; then
-  printf '{"failed": true, "msg": %s}' "$(jwash pvs error: "$pvcheck")"
+  printf '{"failed": true, "msg": %s}' "$(jwash "pvs error: $pvcheck")"
   exit 1
 fi
 
@@ -61,7 +61,7 @@ while true; do
 
   # Find the last linear segment
   LVM2_PVSEG_START=
-  eval $(segvars "$pv" | grep SEGTYPE=.linear. | tail -1)
+  eval "$(segvars "$pv" | grep SEGTYPE=.linear. | tail -1)"
     if [[ -z $LVM2_PVSEG_START ]]; then
     printf '{"failed": true, "msg": "no linear segments found"}'
     exit 1
@@ -77,9 +77,8 @@ while true; do
   changed=true
   from_range="$pv:$((move_start+move_size-free_size))-$((move_start+move_size-1))"
   to_range="$pv:$((free_start))-$((free_start+free_size))"
-  moveout="$(pvmove --atomic --alloc anywhere "$from_range" "$to_range" 2>&1)"
-  if [[ $? -ne 0 ]]; then
-    printf '{"failed": true, "msg": %s}' "$(jwash pvmove $from_range $to_range error: $moveout)"
+  if ! moveout="$(pvmove --atomic --alloc anywhere "$from_range" "$to_range" 2>&1)"; then
+    printf '{"failed": true, "msg": %s}' "$(jwash "pvmove $from_range $to_range error: $moveout")"
     exit 1
   fi
 done
