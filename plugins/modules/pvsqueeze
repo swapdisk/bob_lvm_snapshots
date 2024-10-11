@@ -16,7 +16,18 @@ jwash () {
   echo -n "$*" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
 
+# Return segment map as JSON list
+segmap_list () {
+  echo -n "[$(pvs "$1" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1 | while IFS= read -r x; do echo -n "$(jwash "$x"),"; done | sed 's/.$/]/')"
+}
+
+# Return segment info vars
+segvars () {
+  pvs "$1" --noheadings --nameprefixes --segments -o pvseg_start,pvseg_size,segtype
+}
+
 # Ansible input args are set here
+# shellcheck source=/dev/null
 source "$1"
 
 # Check for required arg pv
@@ -26,23 +37,21 @@ if [[ ! $pv ]]; then
 fi
 
 # Check that pv is really a PV
-pvcheck="$(pvs "$pv" 2>&1)"
-if [[ $? -ne 0 ]]; then
-  printf '{"failed": true, "msg": %s}' "$(jwash pvs error: $pvcheck)"
+if ! pvcheck="$(pvs "$pv" 2>&1)"; then
+  printf '{"failed": true, "msg": %s}' "$(jwash pvs error: "$pvcheck")"
   exit 1
 fi
 
 # Get before segment map
-segmap_before_lines="[$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1 | while IFS= read x; do echo -n "$(jwash "$x"),"; done | sed 's/.$/]/')"
+segmap_before_lines="$(segmap_list "$pv")"
 
 # Iterate stuffing PEs in each free hole
-pvsargs='--noheadings --nameprefixes --segments -o pvseg_start,pvseg_size,segtype'
 moves=0
 changed=false
 while true; do
   # Find first free segment
   LVM2_PVSEG_START=
-  eval $(pvs "$pv" $pvsargs | grep SEGTYPE=.free. | head -1)
+  eval "$(segvars "$pv" | grep SEGTYPE=.free. | head -1)"
   if [[ -z $LVM2_PVSEG_START ]]; then
     printf '{"failed": true, "msg": "no free segments found"}'
     exit 1
@@ -52,7 +61,7 @@ while true; do
 
   # Find the last linear segment
   LVM2_PVSEG_START=
-  eval $(pvs "$pv" $pvsargs | grep SEGTYPE=.linear. | tail -1)
+  eval $(segvars "$pv" | grep SEGTYPE=.linear. | tail -1)
     if [[ -z $LVM2_PVSEG_START ]]; then
     printf '{"failed": true, "msg": "no linear segments found"}'
     exit 1
@@ -76,7 +85,7 @@ while true; do
 done
 
 # Get after segment map
-segmap_done_lines="[$(pvs "$pv" --segments -o lvname,pvseg_start,pvseg_size,seg_le_ranges 2>&1 | while IFS= read x; do echo -n "$(jwash "$x"),"; done | sed 's/.$/]/')"
+segmap_done_lines="$(segmap_list "$pv")"
 
 # Output JSON results
 printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before_lines": %s, "segmap_done_lines": %s}' "$segmap_before_lines" "$segmap_done_lines"

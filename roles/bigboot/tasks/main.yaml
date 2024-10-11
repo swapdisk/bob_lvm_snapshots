@@ -54,7 +54,7 @@
 
 - name: Bob try module
   infra.lvm_snapshots.pvsqueeze:
-    pv: /dev/nvme0n1p2
+    pv: /dev/vda2
   register: bobtry
 
 - name: Show me
