@@ -55,6 +55,8 @@
 - name: Bob try module
   infra.lvm_snapshots.pvsqueeze:
     pv: /dev/vda2
+  environment:
+    LC_CTYPE: C
   register: bobtry
 
 - name: Show me

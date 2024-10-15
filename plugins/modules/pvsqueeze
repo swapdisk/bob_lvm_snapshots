@@ -34,6 +34,8 @@ segmap_list () {
 # shellcheck source=/dev/null
 source "$1"
 
+myenv="$(echo -n "[$(env | while IFS= read -r x; do echo -n "$(jwash "$x"),"; done | sed 's/.$/]/')")"
+
 # Check for required arg pv
 if [[ ! $pv ]]; then
   printf '{"failed": true, "msg": "missing required arguments: pv"}'
@@ -91,6 +93,6 @@ done
 segmap_done_lines="$(segmap_list "$pv")"
 
 # Output JSON results
-printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before_lines": %s, "segmap_done_lines": %s}' "$segmap_before_lines" "$segmap_done_lines"
+printf '{"failed": false, "changed": '$changed', "msg": "Done with '$moves' pvmoves", "segmap_before_lines": %s, "segmap_done_lines": %s, "myenv": %s}' "$segmap_before_lines" "$segmap_done_lines" "$myenv"
 
 exit 0
