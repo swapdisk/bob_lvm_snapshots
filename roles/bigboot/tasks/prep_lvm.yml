@@ -34,14 +34,11 @@
   register: pvresize_test
 
 - name: Evict extents from end of physical volume
-  ansible.builtin.command:
-    cmd: >-
-      /usr/sbin/lvm pvmove
-      --alloc anywhere
-      /dev/{{ bigboot_next_partition_name }}:{{ (((pv_size.stdout | int - bigboot_increase_bytes | int) / vg_extent_size.stdout | int) - 1) | int }}-
+  infra.lvm_snapshots.pvsqueeze:
+    pv: /dev/{{ bigboot_next_partition_name }}
+  environment:
+    LC_CTYPE: C
   when: pvresize_test.rc | default(0, true) == 5
-  changed_when: true
-  register: pvmove
 
 - name: Real pvresize
   ansible.builtin.command:

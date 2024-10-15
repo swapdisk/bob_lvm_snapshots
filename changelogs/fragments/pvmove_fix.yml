@@ -1,0 +1,3 @@
+bugfixes:
+  - Fix impact of upstream LVM pvmove bug
+
