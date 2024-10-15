@@ -54,7 +54,7 @@
 
 - name: Bob try module
   infra.lvm_snapshots.pvsqueeze:
-    pv: /dev/vda2
+    pv: /dev/nvme0n1p2
   environment:
     LC_CTYPE: C
   register: bobtry
