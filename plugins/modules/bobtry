@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# shellcheck source=/dev/null
-source "$1"
-pv=${pv:=}
-echo '{"msg": "Hello!", "pv": "'$pv'", "changed": false, "failed": false, "projects": [1,2]}'
-exit 1
-
