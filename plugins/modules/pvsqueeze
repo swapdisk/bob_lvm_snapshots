@@ -76,6 +76,9 @@ while true; do
   # We're done when first free is after the last linear
   [[ $free_start -gt $move_start ]] && break
 
+  # PEs moved can't exceed how many in the last linear
+  [[ $free_size -gt $move_size ]] && free_size=$move_size
+
   # Move last linear PEs to the free segment
   ((moves++))
   changed=true
