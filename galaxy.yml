@@ -13,6 +13,7 @@ tags:
 - lvm
 - storage
 dependencies:
+  "ansible.posix": "*"
   "community.general": "*"
 repository: https://github.com/redhat-cop/infra.lvm_snapshots
 documentation: https://github.com/redhat-cop/infra.lvm_snapshots
