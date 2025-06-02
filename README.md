@@ -10,13 +10,14 @@ A reliable snapshot/rollback capability is a key feature required to enable the 
 
 ### Ansible Version
 
-This collection requires ansible from version `2.14.0` and above
+This collection requires ansible from version `2.15.0` and above
 
 ### Collections
 
 This collection depends on the following collections
 
 ```yaml
+- "ansible.posix": "*"
 - "community.general": "*"
 ```
 
